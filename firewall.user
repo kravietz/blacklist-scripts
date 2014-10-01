@@ -27,6 +27,11 @@ if [ ! -x /usr/sbin/ipset ]; then
     echo "Run: opkg update && opkg install ipset"
     exit 1
 fi
+if [ ! -x /usr/bin/curl ]; then
+    echo "Cannot find curl"
+    echo "Run: opkg update && opkg install curl"
+    exit 1
+fi
 
 # create main blocklists chain
 if ! iptables -L ${blocklist_chain_name}; then iptables -N ${blocklist_chain_name}; fi
