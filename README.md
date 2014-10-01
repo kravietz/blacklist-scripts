@@ -7,12 +7,16 @@ This is a collection of shell scripts that are intended to block Linux systems a
 * [Emerging Threats](http://rules.emergingthreats.net/fwrules/) - list of other known threats (botnet C&C, compromised servers etc) compiled from various sources, including [Spamhaus DROP](http://www.spamhaus.org/drop/), [Shadoserver](https://www.shadowserver.org/wiki/) and [DShield Top Attackers](http://www.dshield.org/top10.html)
 * [www.blocklist.de](https://www.blocklist.de/en/index.html) - list of known password bruteforcers supplied by a network of [fail2ban](http://www.fail2ban.org/wiki/index.php/Main_Page) users
 * [iBlocklist](https://www.iblocklist.com/lists.php) - various free and subscription based lists
+* [Bogons](http://www.team-cymru.org/Services/Bogons/) - IP subnets that should never appear on public Internet; this includes RFC 1918 networks, so be careful with deploying in private networks
 
 ## firewall.user
 This scripts is indended for OpenWRT routers. It will use the following blocklists by default:
 
 * www.blocklist.de
 * Emerging Threats
+* Bogons
+
+As it includes Bogons, it only checks incoming traffic on the WAN interface of the router. Obviously, if your WAN interface is on RFC 1918 network, you might lose connectivity from that side.
 
 Requirements:
 
