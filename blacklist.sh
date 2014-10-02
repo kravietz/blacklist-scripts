@@ -13,13 +13,13 @@ urls="$urls https://www.blocklist.de/downloads/export-ips_all.txt"
 
 blocklist_chain_name=blocklists
 
-if [ $(which ipset) ]; then
+if [ -z "$(which ipset)" ]; then
     echo "Cannot find ipset"
     echo "Run \"apt-get install ipset\" or \"yum install ipset\""
     exit 1
 fi
 
-if [ $(which curl) ]; then
+if [ -z "$(which curl)" ]; then
     echo "Cannot find curl"
     echo "Run \"apt-get install curl\" or \"yum install curl\""
     exit 1
