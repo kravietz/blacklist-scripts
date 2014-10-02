@@ -3,9 +3,6 @@
 # IP blacklisting script for Linux servers
 # Pawel Krawczyk https://keybase.io/kravietz
 #
-# This script should be *only* used on OpenWRT as it relies on uci configuration framework
-# specific to these routers. 
-#
 # This script should be installed as /etc/cron.daily/blacklist
 
 
