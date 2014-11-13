@@ -50,7 +50,7 @@ for url in $urls; do
     done <"$tmp2"
     iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" src,dst -m limit --limit 10/minute -j LOG --log-prefix "BLOCK ${set_name} "
     iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" src,dst -j DROP
-    echo ${set_name} $(ipset list ${set_name} | wc -l)
+    # echo ${set_name} $(ipset list ${set_name} | wc -l)
     rm "$tmp" "$tmp2"
 done
 
