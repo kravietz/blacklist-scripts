@@ -40,8 +40,8 @@ if ! iptables -L ${blocklist_chain_name}; then iptables -N ${blocklist_chain_nam
 if ! iptables -L input_rule |grep -q ${blocklist_chain_name}; then
   iptables -I input_rule 1 -m state --state NEW,RELATED -j ${blocklist_chain_name}
 fi
-if ! iptables -L forward_rule |grep -q ${blocklist_chain_name}; then
-  iptables -I forward_rule 1 -m state --state NEW,RELATED -j ${blocklist_chain_name}
+if ! iptables -L forwarding_rule |grep -q ${blocklist_chain_name}; then
+  iptables -I forwarding_rule 1 -m state --state NEW,RELATED -j ${blocklist_chain_name}
 fi                                                                 
 
 wan_iface=$(uci get network.wan.ifname)
@@ -56,7 +56,7 @@ for url in $urls; do
     tmp=$(mktemp)
     tmp2=$(mktemp)
     set_name=$(basename $url)
-    curl -s --compressed -k "$url" >"$tmp"
+    curl -s -k "$url" >"$tmp"
     sort -u <"$tmp" | egrep "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$" >"$tmp2"
     ipset create ${set_name} hash:net
     while read line; do
