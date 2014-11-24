@@ -37,11 +37,11 @@ fi
 if ! iptables -L ${blocklist_chain_name}; then iptables -N ${blocklist_chain_name}; fi
 
 # inject references to blocklist in the beginning of input and forward chains
-if ! iptables -L input|grep -q ${blocklist_chain_name}; then
-  iptables -I input 1 -m state --state NEW,RELATED -j ${blocklist_chain_name}
+if ! iptables -L input_rule |grep -q ${blocklist_chain_name}; then
+  iptables -I input_rule 1 -m state --state NEW,RELATED -j ${blocklist_chain_name}
 fi
-if ! iptables -L forward|grep -q ${blocklist_chain_name}; then
-  iptables -I forward 1 -m state --state NEW,RELATED -j ${blocklist_chain_name}
+if ! iptables -L forward_rule |grep -q ${blocklist_chain_name}; then
+  iptables -I forward_rule 1 -m state --state NEW,RELATED -j ${blocklist_chain_name}
 fi                                                                 
 
 wan_iface=$(uci get network.wan.ifname)
@@ -56,11 +56,11 @@ for url in $urls; do
     tmp=$(mktemp)
     tmp2=$(mktemp)
     set_name=$(basename $url)
-    curl --compressed -k "$url" >"$tmp"
+    curl -s --compressed -k "$url" >"$tmp"
     sort -u <"$tmp" | egrep "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$" >"$tmp2"
-    ipset -! create ${set_name} hash:net
+    ipset create ${set_name} hash:net
     while read line; do
-        ipset add ${set_name} "$line"
+        ipset -! add ${set_name} "$line"
     done <"$tmp2"
     iptables -A ${blocklist_chain_name} -i "${wan_iface}" -m set --match-set "${set_name}" src,dst -m limit --limit 10/minute -j LOG --log-prefix "BLOCK ${set_name} "
     iptables -A ${blocklist_chain_name} -i "${wan_iface}" -m set --match-set "${set_name}" src,dst -j DROP
