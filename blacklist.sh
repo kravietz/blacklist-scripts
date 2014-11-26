@@ -57,16 +57,16 @@ for url in $urls; do
     hash_size=$(expr $new_list_size / 2)
 
     # start writing new set file
-    echo "destroy ${tmp_set_name}" >"${new_set_file}" # clean up any left overs
-    echo "create ${tmp_set_name} hash:net family inet hashsize ${hash_size} maxelem ${new_list_size}" >"${new_set_file}"
+    echo "destroy ${tmp_set_name}" >>"${new_set_file}" # clean up any left overs
+    echo "create ${tmp_set_name} hash:net family inet hashsize ${hash_size} maxelem ${new_list_size}" >>"${new_set_file}"
 
     # convert list of IPs to ipset statements
     while read line; do
-        echo "add ${tmp_set_name} ${line}" >"${new_set_file}"
+        echo "add ${tmp_set_name} ${line}" >>"${new_set_file}"
     done <"$sorted_blocklist"
 
-    echo "swap ${tmp_set_name} ${set_name}" >"${new_set_file}" # insert new blocklist into the old set
-    echo "destroy ${tmp_set_name}" >"${new_set_file}" # remove old set
+    echo "swap ${tmp_set_name} ${set_name}" >>"${new_set_file}" # insert new blocklist into the old set
+    echo "destroy ${tmp_set_name}" >>"${new_set_file}" # remove old set
 
     # actually execute the set update
     ipset restore < "${new_set_file}"
