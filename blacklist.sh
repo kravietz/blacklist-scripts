@@ -75,7 +75,7 @@ for url in $urls; do
     iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" src,dst -j DROP
 
     # clean up temp files
-    rm "${raw_blocklist}" "${sorted_blocklist}" "${new_set_file}"
+    rm "${unsorted_blocklist}" "${sorted_blocklist}" "${new_set_file}"
 done
 
 
