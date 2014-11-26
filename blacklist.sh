@@ -26,7 +26,9 @@ if [ -z "$(which curl)" ]; then
 fi
 
 # create main blocklists chain
-if ! iptables -L | grep -q "Chain ${blocklist_chain_name}"; then iptables -N ${blocklist_chain_name}; fi
+if ! iptables -L | grep -q "Chain ${blocklist_chain_name}"; then
+    iptables -N ${blocklist_chain_name}
+fi
 
 # inject references to blocklist in the beginning of input and forward chains
 if ! iptables -L INPUT|grep -q ${blocklist_chain_name}; then
@@ -39,19 +41,41 @@ fi
 iptables -F ${blocklist_chain_name}
                                                                       
 for url in $urls; do
-    tmp=$(mktemp)
-    tmp2=$(mktemp)
+    # initialize temp files
+    raw_blocklist=$(mktemp)
+    sorted_blocklist=$(mktemp)
+    new_set_file=$(mktemp)
+
+    # download the blocklist
     set_name=$(basename $url)
-    curl -s --compressed -k "$url" >"$tmp"
-    sort -u <"$tmp" | egrep "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$" >"$tmp2"
-    ipset -! create ${set_name} hash:net
+    curl -s --compressed -k "$url" >"${unsorted_blocklist}"
+    sort -u <"${unsorted_blocklist}" | egrep "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$" >"${sorted_blocklist}"
+
+    # calculate performance parameters for the new set
+    tmp_set_name="${set_name}_tmp"
+    new_list_size=$(wc -l "${sorted_blocklist}")
+    hash_size=$(expr $new_list_size / 2)
+
+    # start writing new set file
+    echo "destroy ${tmp_set_name}" >"${new_set_file}" # clean up any left overs
+    echo "create ${tmp_set_name} hash:net family inet hashsize ${hash_size} maxelem ${new_list_size}" >"${new_set_file}"
+
+    # convert list of IPs to ipset statements
     while read line; do
-        ipset -! add ${set_name} "$line"
-    done <"$tmp2"
+        echo "add ${tmp_set_name} ${line}" >"${new_set_file}"
+    done <"$sorted_blocklist"
+
+    echo "swap ${tmp_set_name} ${set_name}" >"${new_set_file}" # insert new blocklist into the old set
+    echo "destroy ${tmp_set_name}" >"${new_set_file}" # remove old set
+
+    # actually execute the set update
+    ipset restore < "${new_set_file}"
+
     iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" src,dst -m limit --limit 10/minute -j LOG --log-prefix "BLOCK ${set_name} "
     iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" src,dst -j DROP
-    # echo ${set_name} $(ipset list ${set_name} | wc -l)
-    rm "$tmp" "$tmp2"
+
+    # clean up temp files
+    rm "${raw_blocklist}" "${sorted_blocklist}" "${new_set_file}"
 done
 
 
