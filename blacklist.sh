@@ -42,7 +42,7 @@ iptables -F ${blocklist_chain_name}
                                                                       
 for url in $urls; do
     # initialize temp files
-    raw_blocklist=$(mktemp)
+    unsorted_blocklist=$(mktemp)
     sorted_blocklist=$(mktemp)
     new_set_file=$(mktemp)
 
@@ -53,7 +53,7 @@ for url in $urls; do
 
     # calculate performance parameters for the new set
     tmp_set_name="${set_name}_tmp"
-    new_list_size=$(wc -l "${sorted_blocklist}")
+    new_list_size=$(wc -l "${sorted_blocklist}" | awk '{print $1;}' )
     hash_size=$(expr $new_list_size / 2)
 
     # start writing new set file
