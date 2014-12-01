@@ -57,6 +57,7 @@ for url in $urls; do
     hash_size=$(expr $new_list_size / 2)
 
     # start writing new set file
+    echo "create ${set_name} hash:net family inet" >>"${new_set_file}"
     echo "create ${tmp_set_name} hash:net family inet hashsize ${hash_size} maxelem ${new_list_size}" >>"${new_set_file}"
 
     # convert list of IPs to ipset statements
