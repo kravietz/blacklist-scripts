@@ -79,7 +79,7 @@ for url in $urls; do
     echo "destroy ${tmp_set_name}" >>"${new_set_file}" # remove old set
 
     # actually execute the set update
-    ipset restore < "${new_set_file}"
+    ipset -! -q restore < "${new_set_file}"
 
     iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" src,dst -m limit --limit 10/minute -j LOG --log-prefix "BLOCK ${set_name} "
     iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" src,dst -j DROP
