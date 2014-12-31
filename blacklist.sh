@@ -62,7 +62,7 @@ for url in $urls; do
     sort -u <"${unsorted_blocklist}" | egrep "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$" >"${sorted_blocklist}"
 
     # calculate performance parameters for the new set
-    tmp_set_name="${set_name}_tmp"
+    tmp_set_name="tmp_${RANDOM}"
     new_list_size=$(wc -l "${sorted_blocklist}" | awk '{print $1;}' )
     hash_size=$(expr $new_list_size / 2)
 
@@ -78,8 +78,11 @@ for url in $urls; do
         echo "add ${tmp_set_name} ${line}" >>"${new_set_file}"
     done <"$sorted_blocklist"
 
-    echo "swap ${tmp_set_name} ${set_name}" >>"${new_set_file}" # insert new blocklist into the old set
-    echo "destroy ${tmp_set_name}" >>"${new_set_file}" # remove old set
+    # replace old set with the new, temp one - this guarantees an atomic update
+    echo "swap ${tmp_set_name} ${set_name}" >>"${new_set_file}"
+
+    # clear old set (now under temp name)
+    echo "destroy ${tmp_set_name}" >>"${new_set_file}"
 
     # actually execute the set update
     ipset -! -q restore < "${new_set_file}"
