@@ -66,8 +66,11 @@ for url in $urls; do
     new_list_size=$(wc -l "${sorted_blocklist}" | awk '{print $1;}' )
     hash_size=$(expr $new_list_size / 2)
 
+    if ! ipset -q list ${set_name} >/dev/null ; then
+        ipset create ${set_name} hash:net family inet
+    fi
+
     # start writing new set file
-    echo "create ${set_name} hash:net family inet" >>"${new_set_file}"
     echo "create ${tmp_set_name} hash:net family inet hashsize ${hash_size} maxelem ${new_list_size}" >>"${new_set_file}"
 
     # convert list of IPs to ipset statements
