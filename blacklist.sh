@@ -32,10 +32,10 @@ fi
 
 # inject references to blocklist in the beginning of input and forward chains
 if ! iptables -L INPUT | grep -q ${blocklist_chain_name}; then
-  iptables -I INPUT 1 -m state --state NEW,RELATED -j ${blocklist_chain_name}
+  iptables -I INPUT 1 -j ${blocklist_chain_name}
 fi
 if ! iptables -L FORWARD | grep -q ${blocklist_chain_name}; then
-  iptables -I FORWARD 1 -m state --state NEW,RELATED -j ${blocklist_chain_name}
+  iptables -I FORWARD 1 -j ${blocklist_chain_name}
 fi                                                                 
 
 # flush the chain referencing blacklists, they will be restored in a second
