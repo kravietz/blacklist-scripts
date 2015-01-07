@@ -4,7 +4,7 @@ This is a collection of shell scripts that are intended to block Linux systems a
 
 [Emerging Threats](http://rules.emergingthreats.net/fwrules/) provides similar rules that essentially run `iptables` for *each* blacklisted IP which is extremely inefficient in case of large blacklists. Using `ipset` means using just one `iptables` rule to perform a very efficient lookup in hash structure created by `ipset`.
 
-## Block lists
+## Available blacklists
 
 * [Emerging Threats](http://rules.emergingthreats.net/fwrules/) - list of other known threats (botnet C&C, compromised servers etc) compiled from various sources, including [Spamhaus DROP](http://www.spamhaus.org/drop/), [Shadoserver](https://www.shadowserver.org/wiki/) and [DShield Top Attackers](http://www.dshield.org/top10.html)
 * [www.blocklist.de](https://www.blocklist.de/en/index.html) - list of known password bruteforcers supplied by a network of [fail2ban](http://www.fail2ban.org/wiki/index.php/Main_Page) users
@@ -17,6 +17,14 @@ By default the script will only load Emerging Threats and Blocklist.de collectio
     urls="$urls https://www.blocklist.de/downloads/export-ips_all.txt"
 
 The script ignores empty lines or comments and will only extract anything that looks like an IP address (`a.b.c.d`) or CIDR subnet (`a.b.c.d/nn`). Each blacklist is loaded into a separate `ipset` collection so that logging unambigously identifies which blacklist blocked a packet.
+
+The script also created an empty `manual-blacklist` set that can be used by the administrator for manual blacklisting. For example:
+
+    ipset add manual-blacklist 217.146.93.122
+
+Removal:
+
+    ipset delete manual-blacklist 217.146.93.122
 
 ## OpenWRT
 The script automatically detects OpenWRT environment (looking for `uci`) and will try to obtain the WAN interface name. The filtering will be then **limited to WAN interface only.**
@@ -48,6 +56,30 @@ Manual run:
 
     sh /etc/cron.daily/blacklist
 
+# Integration with OSSEC
+[OSSEC HIDS](http://www.ossec.net/) is a host-intrusion detection engine for Unix and Windows servers. Its [active response](http://ossec-docs.readthedocs.org/en/latest/manual/ar/index.html) feature allows running a script in response to configured events, for example blocking an IP address detected as attempting to continuously bruteforce a SSH password.
+
+The `ipset-drop.sh` is active response script to add offending IP addresses to a `manual-blacklist` set also created by the `blacklist.sh` script.
+
+Installation:
+
+    cp ipset-drop.sh /var/ossec/active-response/bin
+
+Example OSSEC configuration:
+
+    <command>
+      <name>ipset-drop</name>
+      <executable>ipset-drop.sh</executable>
+      <expect>srcip</expect>
+      <timeout_allowed>yes</timeout_allowed>
+    </command>
+
+    <active-response>
+      <command>ipset-drop</command>
+      <location>local</location>
+      <rules_id>5720</rules_id> <!-- Rule: 5720 fired (level 10) -> Multiple SSHD authentication failures. -->
+    </active-response>
+
 ## Samples
 
 Number of blacklisted IP addresses:
@@ -55,18 +87,19 @@ Number of blacklisted IP addresses:
     # ipset list | wc -l
     26160
 
-Traffic from blacklisted IP addresses in router logs (OpenWRT):
+Traffic (ICMP and TCP) from blacklisted IP addresses in router logs (OpenWRT):
 
     # dmesg|grep BLOCK
-    [745433.590000] BLOCK emerging-Block-IPs.txt IN=eth0.2 OUT=br-lan MAC=64:70:02:cc:64:70:02:cc:24:73:9c:97:26:50:b9:10:08:00 SRC=217.146.93.122 DST=10.10.10.20 LEN=28 TOS=0x00 PREC=0x00 TTL=56 ID=54090 PROTO=ICMP TYPE=0 CODE=0 ID=48891 SEQ=0 MARK=0x10 
-    [745433.620000] BLOCK emerging-Block-IPs.txt IN=eth0.2 OUT=br-lan MAC=64:70:02:cc:64:70:02:cc:24:73:9c:97:26:50:b9:10:08:00 SRC=144.76.71.210 DST=10.10.10.20 LEN=28 TOS=0x00 PREC=0x40 TTL=51 ID=17805 PROTO=ICMP TYPE=0 CODE=0 ID=28814 SEQ=0 MARK=0x10 
-    [745433.640000] BLOCK emerging-Block-IPs.txt IN=eth0.2 OUT=br-lan MAC=64:70:02:cc:64:70:02:cc:24:73:9c:97:26:50:b9:10:08:00 SRC=85.88.6.197 DST=10.10.10.20 LEN=28 TOS=0x00 PREC=0x00 TTL=52 ID=7020 PROTO=ICMP TYPE=0 CODE=0 ID=43909 SEQ=0 MARK=0x10 
-    [745433.660000] BLOCK emerging-Block-IPs.txt IN=eth0.2 OUT=br-lan MAC=64:70:02:cc:64:70:02:cc:24:73:9c:97:26:50:b9:10:08:00 SRC=85.24.138.88 DST=10.10.10.20 LEN=28 TOS=0x00 PREC=0x00 TTL=52 ID=63164 PROTO=ICMP TYPE=0 CODE=0 ID=13139 SEQ=0 MARK=0x10 
-    [745433.680000] BLOCK emerging-Block-IPs.txt IN=eth0.2 OUT=br-lan MAC=64:70:02:cc:64:70:02:cc:24:73:9c:97:26:50:b9:10:08:00 SRC=212.40.37.118 DST=10.10.10.20 LEN=28 TOS=0x00 PREC=0x00 TTL=52 ID=437 PROTO=ICMP TYPE=0 CODE=0 ID=6934 SEQ=0 MARK=0x10 
-    [745439.810000] BLOCK emerging-Block-IPs.txt IN=eth0.2 OUT=br-lan MAC=64:70:02:cc:64:70:02:cc:24:73:9c:97:26:50:b9:10:08:00 SRC=144.76.71.210 DST=10.10.10.20 LEN=44 TOS=0x00 PREC=0x00 TTL=51 ID=0 DF PROTO=TCP SPT=443 DPT=58826 WINDOW=14600 RES=0x00 ACK SYN URGP=0 MARK=0x33 
-    [745447.310000] BLOCK emerging-Block-IPs.txt IN=eth0.2 OUT=br-lan MAC=64:70:02:cc:64:70:02:cc:24:73:9c:97:26:50:b9:10:08:00 SRC=69.194.235.103 DST=10.10.10.20 LEN=44 TOS=0x00 PREC=0x00 TTL=49 ID=0 DF PROTO=TCP SPT=443 DPT=58826 WINDOW=5840 RES=0x00 ACK SYN URGP=0 MARK=0x33 
-    [745451.810000] BLOCK emerging-Block-IPs.txt IN=eth0.2 OUT=br-lan MAC=64:70:02:cc:64:70:02:cc:24:73:9c:97:26:50:b9:10:08:00 SRC=144.76.71.210 DST=10.10.10.20 LEN=44 TOS=0x00 PREC=0x00 TTL=51 ID=0 DF PROTO=TCP SPT=443 DPT=58826 WINDOW=14600 RES=0x00 ACK SYN URGP=0 MARK=0x33 
-    [745459.310000] BLOCK emerging-Block-IPs.txt IN=eth0.2 OUT=br-lan MAC=64:70:02:cc:64:70:02:cc:24:73:9c:97:26:50:b9:10:08:00 SRC=69.194.235.103 DST=10.10.10.20 LEN=44 TOS=0x00 PREC=0x00 TTL=49 ID=0 DF PROTO=TCP SPT=443 DPT=58826 WINDOW=5840 RES=0x00 ACK SYN URGP=0 MARK=0x33 
-    [745466.000000] BLOCK emerging-Block-IPs.txt IN=eth0.2 OUT=br-lan MAC=64:70:02:cc:64:70:02:cc:24:73:9c:97:26:50:b9:10:08:00 SRC=87.98.182.132 DST=10.10.10.20 LEN=44 TOS=0x00 PREC=0x00 TTL=54 ID=0 DF PROTO=TCP SPT=443 DPT=58826 WINDOW=14600 RES=0x00 ACK SYN URGP=0 MARK=0x33 
-    [745483.510000] BLOCK emerging-Block-IPs.txt IN=eth0.2 OUT=br-lan MAC=64:70:02:cc:64:70:02:cc:24:73:9c:97:26:50:b9:10:08:00 SRC=69.194.235.103 DST=10.10.10.20 LEN=44 TOS=0x00 PREC=0x00 TTL=49 ID=0 DF PROTO=TCP SPT=443 DPT=58826 WINDOW=5840 RES=0x00 ACK SYN URGP=0 MARK=0x33 
-    [745484.510000] BLOCK emerging-Block-IPs.txt IN=eth0.2 OUT=br-lan MAC=64:70:02:cc:64:70:02:cc:24:73:9c:97:26:50:b9:10:08:00 SRC=69.194.235.103 DST=10.10.10.20 LEN=44 TOS=0x00 PREC=0x00 TTL=45 ID=0 DF PROTO=TCP SPT=443 DPT=58827 WINDOW=5840 RES=0x00 ACK SYN URGP=0 MARK=0x33
+    [745433.590000] BLOCK emerging-Block-IPs.txt IN=eth0.2 OUT=br-lan MAC=64:70:12:c2:64:70:02:cc:24:73:9c:97:26:50:b9:10:08:00 SRC=217.146.93.122 DST=10.10.10.20 LEN=28 TOS=0x00 PREC=0x00 TTL=56 ID=54090 PROTO=ICMP TYPE=0 CODE=0 ID=48891 SEQ=0 MARK=0x10 
+    [745433.620000] BLOCK emerging-Block-IPs.txt IN=eth0.2 OUT=br-lan MAC=64:70:12:c2:64:70:02:cc:24:73:9c:97:26:50:b9:10:08:00 SRC=144.76.71.210 DST=10.10.10.20 LEN=28 TOS=0x00 PREC=0x40 TTL=51 ID=17805 PROTO=ICMP TYPE=0 CODE=0 ID=28814 SEQ=0 MARK=0x10 
+    [745484.510000] BLOCK emerging-Block-IPs.txt IN=eth0.2 OUT=br-lan MAC=64:70:12:c2:64:70:02:cc:24:73:9c:97:26:50:b9:10:08:00 SRC=69.194.235.103 DST=10.10.10.20 LEN=44 TOS=0x00 PREC=0x00 TTL=45 ID=0 DF PROTO=TCP SPT=443 DPT=58827 WINDOW=5840 RES=0x00 ACK SYN URGP=0 MARK=0x33
+
+Traffic (SSH bruteforce scanners) from blacklisted IP addresses in web server logs (CentOS):
+
+    BLOCK export-ips_all.txt IN=eth1 OUT= MAC=bc:16:2e:08:69:d4:3c:08:f6:d9:93:a5:08:00 SRC=122.225.97.79 DST=10.179.134.230 LEN=40 TOS=0x00 PREC=0x00 TTL=101 ID=256 PROTO=TCP SPT=6000 DPT=22 WINDOW=16384 RES=0x00 SYN URGP=0 
+    BLOCK export-ips_all.txt IN=eth1 OUT= MAC=bc:16:2e:08:69:d4:3c:08:f6:d9:93:a5:08:00 SRC=61.174.51.207 DST=10.179.134.230 LEN=40 TOS=0x00 PREC=0x00 TTL=102 ID=256 PROTO=TCP SPT=6000 DPT=22 WINDOW=16384 RES=0x00 SYN URGP=0
+
+Traffic (SSH password bruteforce scanners) blocked by [OSSEC HIDS](http://www.ossec.net/) (Linux):
+
+    BLOCK manual-blacklist IN=eth1 OUT= MAC=bc:76:2e:08:69:d4:3c:08:f6:d9:93:a5:08:00 SRC=89.46.14.48 DST=10.179.134.230 LEN=60 TOS=0x00 PREC=0x00 TTL=48 ID=62214 DF PROTO=TCP SPT=51436 DPT=22 WINDOW=5840 RES=0x00 SYN URGP=0 
+    BLOCK manual-blacklist IN=eth1 OUT= MAC=bc:76:2e:08:69:d4:3c:08:f6:d9:93:a5:08:00 SRC=89.46.14.48 DST=10.179.134.230 LEN=60 TOS=0x00 PREC=0x00 TTL=48 ID=62215 DF PROTO=TCP SPT=51436 DPT=22 WINDOW=5840 RES=0x00 SYN URGP=0 
