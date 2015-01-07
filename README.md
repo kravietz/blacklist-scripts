@@ -9,7 +9,7 @@ This is a collection of shell scripts that are intended to block Linux systems a
 * [Emerging Threats](http://rules.emergingthreats.net/fwrules/) - list of other known threats (botnet C&C, compromised servers etc) compiled from various sources, including [Spamhaus DROP](http://www.spamhaus.org/drop/), [Shadoserver](https://www.shadowserver.org/wiki/) and [DShield Top Attackers](http://www.dshield.org/top10.html)
 * [www.blocklist.de](https://www.blocklist.de/en/index.html) - list of known password bruteforcers supplied by a network of [fail2ban](http://www.fail2ban.org/wiki/index.php/Main_Page) users
 * [iBlocklist](https://www.iblocklist.com/lists.php) - various free and subscription based lists
-* [Bogons](http://www.team-cymru.org/Services/Bogons/) - IP subnets that should never appear on public Internet; this includes RFC 1918 networks, **be careful with deploying this in private networks**
+* [Bogons](http://www.team-cymru.org/Services/Bogons/) - IP subnets that should never appear on public Internet; this includes [RFC 1918](http://tools.ietf.org/html/rfc1918) networks so running this on a machine in a private network will effectively **shut its networking down**
 
 By default the script will only load Emerging Threats and Blocklist.de collections. Others may be added by simply appending to the `urls` variable in the beginning of the script:
 
@@ -38,6 +38,8 @@ Installation:
     cp blacklist.sh /etc/firewall.user
     echo "01 01 * * * sh /etc/firewall.user" >>/etc/crontabs/root
 
+The blacklist will be updated on daily basis.
+
 Manual run:
 
     sh /etc/firewall.user
@@ -51,6 +53,8 @@ Requirements:
 Installation:
 
     cp blacklist.sh /etc/cron.daily/blacklist
+
+The blacklist will be updated on daily basis.
 
 Manual run:
 
