@@ -29,7 +29,9 @@ if [ "$(which uci)" ]; then
     IN_OPT="-i $wan_iface"
     INPUT=input_rule
     FORWARD=forwarding_rule
+    COMPRESS_OPT=""
 else
+    COMPRESS_OPT="--compressed"
     INPUT=INPUT
     FORWARD=FORWARD
 fi
@@ -68,7 +70,7 @@ for url in $urls; do
 
     # download the blocklist
     set_name=$(basename $url)
-    curl -s --compressed -k "$url" >"${unsorted_blocklist}"
+    curl -s ${COMPRESS_OPT} -k "$url" >"${unsorted_blocklist}"
     sort -u <"${unsorted_blocklist}" | egrep "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$" >"${sorted_blocklist}"
 
     # calculate performance parameters for the new set
