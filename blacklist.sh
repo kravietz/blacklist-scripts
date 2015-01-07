@@ -1,10 +1,8 @@
 #!/bin/sh
 
 # IP blacklisting script for Linux servers
-# Pawel Krawczyk https://keybase.io/kravietz
-#
-# This script should be installed as /etc/cron.daily/blacklist
-
+# Pawel Krawczyk 2014-2015
+# documentation https://github.com/kravietz/blacklist-scripts
 
 # Emerging Threats lists offensive IPs such as botnet command servers
 urls="http://rules.emergingthreats.net/fwrules/emerging-Block-IPs.txt"
@@ -25,17 +23,29 @@ if [ -z "$(which curl)" ]; then
     exit 1
 fi
 
+if [ "$(which uci)" ]; then
+    # we're on OpenWRT
+    wan_iface=$(uci get network.wan.ifname)
+    IN_OPT="-i $wan_iface"
+    INPUT=input_rule
+    FORWARD=forwarding_rule
+else
+    INPUT=INPUT
+    FORWARD=FORWARD
+fi
+    
+
 # create main blocklists chain
 if ! iptables -L | grep -q "Chain ${blocklist_chain_name}"; then
     iptables -N ${blocklist_chain_name}
 fi
 
 # inject references to blocklist in the beginning of input and forward chains
-if ! iptables -L INPUT | grep -q ${blocklist_chain_name}; then
-  iptables -I INPUT 1 -j ${blocklist_chain_name}
+if ! iptables -L ${INPUT} | grep -q ${blocklist_chain_name}; then
+  iptables -I ${INPUT} 1 ${IN_OPT} -j ${blocklist_chain_name}
 fi
-if ! iptables -L FORWARD | grep -q ${blocklist_chain_name}; then
-  iptables -I FORWARD 1 -j ${blocklist_chain_name}
+if ! iptables -L ${FORWARD} | grep -q ${blocklist_chain_name}; then
+  iptables -I ${FORWARD} 1 ${IN_OPT} -j ${blocklist_chain_name}
 fi                                                                 
 
 # flush the chain referencing blacklists, they will be restored in a second
