@@ -84,6 +84,21 @@ Example OSSEC configuration:
       <rules_id>5720</rules_id> <!-- Rule: 5720 fired (level 10) -> Multiple SSHD authentication failures. -->
     </active-response>
 
+Another script `router-drop.sh` will perform the same action on a remote router over SSH. This is useful in case of embedded routers where OSSEC agent installation is unfeasibile. OpenWRT logs (over syslog) to a more powerful Linux box with OSSEC installed. On alerts the active response script installed that blocks uoffending IP addresses on the router:
+
+```
+  +---------+ ----- syslog -------> +-------+
+--| OpenWRT |                       | Linux |
+  |         |                       | OSSEC |
+  +---------+ <- active response -- +-------+
+
+```
+
+The `router-drop.sh` script requires two configuration steps:
+
+* configure the `ROUTER` variable to a SSH string for root login to the router (e.g. *root@gw.example.com*)
+* install SSH keys to actually log in; the keys need to be installed on root account as this is where active response script are running
+
 ## Samples
 
 Number of blacklisted IP addresses:
