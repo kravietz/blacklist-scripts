@@ -99,6 +99,23 @@ The `router-drop.sh` script requires two configuration steps:
 * configure the `ROUTER` variable to a SSH string for root login to the router (e.g. *root@gw.example.com*)
 * install SSH keys to actually log in; the keys need to be installed on root account as this is where active response script are running
 
+Example configuration:
+
+     <command>
+       <name>router-drop</name>
+       <executable>router-drop.sh</executable>
+       <expect>srcip</expect>
+       <timeout_allowed>no</timeout_allowed>
+     </command>
+   
+     <active-response>
+       <command>router-drop</command>
+       <location>local</location>
+       <rules_id>51004</rules_id>
+     </active-response>
+
+Event 51004 is defined in `/var/ossec/rules/dropbear_rules.xml` and triggered by a series of unsuccessful password logins. Don't forget to add your trusted networks to `<white_list>` entries to prevent locking yourself out!
+
 ## Samples
 
 Number of blacklisted IP addresses:
