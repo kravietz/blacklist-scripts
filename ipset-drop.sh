@@ -37,4 +37,4 @@ else
    echo "$0: invalid action: ${ACTION}"
 fi
 
-exit 1;
+exit 1
