@@ -8,6 +8,8 @@
 urls="http://rules.emergingthreats.net/fwrules/emerging-Block-IPs.txt"
 # Blocklist.de collects reports from fail2ban probes, listing password brute-forces, scanners and other offenders
 urls="$urls https://www.blocklist.de/downloads/export-ips_all.txt"
+# badips.com, from score 2 up
+urls="$urls http://www.badips.com/get/list/ssh/2"
 
 blocklist_chain_name=blocklists
 
@@ -69,7 +71,7 @@ for url in $urls; do
     new_set_file=$(mktemp)
 
     # download the blocklist
-    set_name=$(basename $url)
+    set_name=$(echo "$url" | awk -F/ '{print $3;}') # set name is derived from source URL hostname
     curl -s ${COMPRESS_OPT} -k "$url" >"${unsorted_blocklist}"
     sort -u <"${unsorted_blocklist}" | egrep "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$" >"${sorted_blocklist}"
 
