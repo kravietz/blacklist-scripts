@@ -69,10 +69,18 @@ for url in $urls; do
     unsorted_blocklist=$(mktemp)
     sorted_blocklist=$(mktemp)
     new_set_file=$(mktemp)
+    headers=$(mktemp)
 
     # download the blocklist
     set_name=$(echo "$url" | awk -F/ '{print $3;}') # set name is derived from source URL hostname
-    curl -s ${COMPRESS_OPT} -k "$url" >"${unsorted_blocklist}"
+    curl -v -s ${COMPRESS_OPT} -k "$url" >"${unsorted_blocklist}" 2>"${headers}"
+
+    # this is required for blocklist.de that sends compressed content if asked for it or not
+    if grep -qi 'content-encoding: gzip' ${headers }; then
+        mv "${unsorted_blocklist}" "${unsorted_blocklist}.gz"
+        gzip -d "${unsorted_blocklist}"
+    fi
+
     sort -u <"${unsorted_blocklist}" | egrep "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$" >"${sorted_blocklist}"
 
     # calculate performance parameters for the new set
@@ -105,7 +113,7 @@ for url in $urls; do
     iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" src,dst -j DROP
 
     # clean up temp files
-    rm "${unsorted_blocklist}" "${sorted_blocklist}" "${new_set_file}"
+    rm "${unsorted_blocklist}" "${sorted_blocklist}" "${new_set_file}" "${headers}"
 done
 
 
