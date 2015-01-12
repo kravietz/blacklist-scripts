@@ -72,13 +72,15 @@ for url in $urls; do
     headers=$(mktemp)
 
     # download the blocklist
-    set_name=$(echo "$url" | awk -F/ '{print $3;}') # set name is derived from source URL hostname
+    set_name=$(echo "$url" | awk -F/ '{print substring($3,0,21);}') # set name is derived from source URL hostname
     curl -v -s ${COMPRESS_OPT} -k "$url" >"${unsorted_blocklist}" 2>"${headers}"
 
     # this is required for blocklist.de that sends compressed content if asked for it or not
-    if grep -qi 'content-encoding: gzip' "${headers}"; then
-        mv "${unsorted_blocklist}" "${unsorted_blocklist}.gz"
-        gzip -d "${unsorted_blocklist}.gz"
+    if [ -z "$COMPRESS_OPT" ]; then
+        if grep -qi 'content-encoding: gzip' "${headers}"; then
+            mv "${unsorted_blocklist}" "${unsorted_blocklist}.gz"
+            gzip -d "${unsorted_blocklist}.gz"
+        fi
     fi
 
     sort -u <"${unsorted_blocklist}" | egrep "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$" >"${sorted_blocklist}"
