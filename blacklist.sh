@@ -13,19 +13,19 @@ urls="$urls http://www.badips.com/get/list/ssh/2"
 
 blocklist_chain_name=blocklists
 
-if [ -z "$(which ipset)" ]; then
+if [ -z "$(which ipset 2>/dev/null)" ]; then
     echo "Cannot find ipset"
     echo "Run \"apt-get install ipset\" or \"yum install ipset\""
     exit 1
 fi
 
-if [ -z "$(which curl)" ]; then
+if [ -z "$(which curl 2>/dev/null)" ]; then
     echo "Cannot find curl"
     echo "Run \"apt-get install curl\" or \"yum install curl\""
     exit 1
 fi
 
-if [ "$(which uci)" ]; then
+if [ "$(which uci 2>/dev/null)" ]; then
     # we're on OpenWRT
     wan_iface=$(uci get network.wan.ifname)
     IN_OPT="-i $wan_iface"
