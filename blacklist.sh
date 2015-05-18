@@ -111,7 +111,7 @@ for url in $urls; do
     # actually execute the set update
     ipset -! -q restore < "${new_set_file}"
 
-    if [ "$1" != "nolog" ]; then
+    if [ "$1" = "log" ]; then
         iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" src,dst -m limit --limit 10/minute -j LOG --log-prefix "BLOCK ${set_name} "
     fi
     iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" src,dst -j DROP
