@@ -83,7 +83,7 @@ for url in $urls; do
         fi
     fi
 
-    sort -u <"${unsorted_blocklist}" | egrep "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$" >"${sorted_blocklist}"
+    sort -u <"${unsorted_blocklist}" | egrep "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(/[0-9]{1,2})?$" >"${sorted_blocklist}"
 
     # calculate performance parameters for the new set
     tmp_set_name="tmp_${RANDOM}"
@@ -112,9 +112,11 @@ for url in $urls; do
     ipset -! -q restore < "${new_set_file}"
 
     if [ "$1" = "log" ]; then
-        iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" src,dst -m limit --limit 10/minute -j LOG --log-prefix "BLOCK ${set_name} "
+        iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" src -m limit --limit 10/minute -j LOG --log-prefix "BLOCK src ${set_name} "
+        iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" dst -m limit --limit 10/minute -j LOG --log-prefix "BLOCK dst ${set_name} "
     fi
-    iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" src,dst -j DROP
+    iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" src -j DROP
+    iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" dst -j DROP
 
     # clean up temp files
     rm "${unsorted_blocklist}" "${sorted_blocklist}" "${new_set_file}" "${headers}"
