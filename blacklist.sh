@@ -15,6 +15,18 @@ urls="$urls https://www.blocklist.de/downloads/export-ips_all.txt"
 # badips.com, from score 2 up
 urls="$urls http://www.badips.com/get/list/ssh/2"
 
+# This is how it will look like on the server
+
+# Chain blocklists (2 references)
+#  pkts bytes target     prot opt in     out     source               destination         
+#     0     0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0            match-set manual-blacklist src,dst limit: avg 10/min burst 5 LOG flags 0 level 4 prefix "BLOCK manual-blacklist "
+#     0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            match-set manual-blacklist src,dst
+#     0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            match-set rules.emergingthreats src
+#     0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            match-set rules.emergingthreats dst
+#     0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            match-set www.blocklist.de src
+#     0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            match-set www.blocklist.de dst
+#     0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            match-set www.badips.com src
+#     0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            match-set www.badips.com dst
 blocklist_chain_name=blocklists
 
 if [ -z "$(which ipset 2>/dev/null)" ]; then
