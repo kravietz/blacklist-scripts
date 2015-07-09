@@ -12,8 +12,12 @@ urls="http://rules.emergingthreats.net/fwrules/emerging-Block-IPs.txt"
 
 # Blocklist.de collects reports from fail2ban probes, listing password brute-forces, scanners and other offenders
 urls="$urls https://www.blocklist.de/downloads/export-ips_all.txt"
+
 # badips.com, from score 2 up
 urls="$urls http://www.badips.com/get/list/ssh/2"
+
+# iblocklist.com is also supported
+# urls="$urls http://list.iblocklist.com/?list=srzondksmjuwsvmgdbhi&fileformat=p2p&archiveformat=gz&username=USERNAMEx$&pin=PIN"
 
 # This is how it will look like on the server
 
@@ -91,18 +95,37 @@ for url in $urls; do
     set_name=$(echo "$url" | awk -F/ '{print substr($3,0,21);}') # set name is derived from source URL hostname
     curl -v -s ${COMPRESS_OPT} -k "$url" >"${unsorted_blocklist}" 2>"${headers}"
 
-    # this is required for blocklist.de that sends compressed content if asked for it or not
+    # this is required for blocklist.de that sends compressed content regardless of asked or not
     if [ -z "$COMPRESS_OPT" ]; then
         if grep -qi 'content-encoding: gzip' "${headers}"; then
             mv "${unsorted_blocklist}" "${unsorted_blocklist}.gz"
             gzip -d "${unsorted_blocklist}.gz"
         fi
     fi
+    # autodetect iblocklist.com format as it needs additional conversion
+    if echo "${url}" | grep -q 'iblocklist.com'; then
+        if [ -f /etc/range2cidr.awk ]; then
+            mv "${unsorted_blocklist}" "${unsorted_blocklist}.gz"
+            gzip -d "${unsorted_blocklist}.gz"
+            awk_tmp=$(mktemp)
+            awk -f /etc/range2cidr.awk <"${unsorted_blocklist}" >"${awk_tmp}"
+            mv "${awk_tmp}" "${unsorted_blocklist}"
+        else
+            echo "range2cidr.awk script not found, cannot process ${unsorted_blocklist}, skipping"
+            continue
+        fi
+    fi
 
     sort -u <"${unsorted_blocklist}" | egrep "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(/[0-9]{1,2})?$" >"${sorted_blocklist}"
 
     # calculate performance parameters for the new set
-    tmp_set_name="tmp_${RANDOM}"
+    if "${RANDOM}"; then
+        # bash
+        tmp_set_name="tmp_${RANDOM}"
+    else
+        # non-bash
+        tmp_set_name="tmp_$$"
+    fi
     new_list_size=$(wc -l "${sorted_blocklist}" | awk '{print $1;}' )
     hash_size=$(expr $new_list_size / 2)
 
