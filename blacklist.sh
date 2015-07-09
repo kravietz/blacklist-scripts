@@ -6,6 +6,10 @@
 
 # Emerging Threats lists offensive IPs such as botnet command servers
 urls="http://rules.emergingthreats.net/fwrules/emerging-Block-IPs.txt"
+
+# URLs for further blocklists are appeneded below using the typical
+# shell syntax:  "$urls new_url"
+
 # Blocklist.de collects reports from fail2ban probes, listing password brute-forces, scanners and other offenders
 urls="$urls https://www.blocklist.de/downloads/export-ips_all.txt"
 # badips.com, from score 2 up
