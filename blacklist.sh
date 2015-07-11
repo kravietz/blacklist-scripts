@@ -119,7 +119,7 @@ for url in $urls; do
     sort -u <"${unsorted_blocklist}" | egrep "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(/[0-9]{1,2})?$" >"${sorted_blocklist}"
 
     # calculate performance parameters for the new set
-    if "${RANDOM}"; then
+    if [ "${RANDOM}" ]; then
         # bash
         tmp_set_name="tmp_${RANDOM}"
     else
