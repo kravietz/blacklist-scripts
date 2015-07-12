@@ -4,20 +4,38 @@
 # Pawel Krawczyk 2014-2015
 # documentation https://github.com/kravietz/blacklist-scripts
 
-# Emerging Threats lists offensive IPs such as botnet command servers
-urls="http://rules.emergingthreats.net/fwrules/emerging-Block-IPs.txt"
+# try to load config file
+# it should contain one blacklist URL per line
 
-# URLs for further blocklists are appeneded below using the typical
-# shell syntax:  "$urls new_url"
+config_file="/etc/ip-blacklist.conf"
+if [ -f "${config_file}" ]; then
+    exec <"${config_file}"
+    read line
+    while [ "$line" ]; do
+        if ! echo "$line" | egrep -q '(^#|^$)'; then
+            urls="${urls} $line"
+        fi
+        read line
+    done
+else
+    # if no config file is available, load default set of blacklists
 
-# Blocklist.de collects reports from fail2ban probes, listing password brute-forces, scanners and other offenders
-urls="$urls https://www.blocklist.de/downloads/export-ips_all.txt"
+    # Emerging Threats lists offensive IPs such as botnet command servers
+    urls="http://rules.emergingthreats.net/fwrules/emerging-Block-IPs.txt"
 
-# badips.com, from score 2 up
-urls="$urls http://www.badips.com/get/list/ssh/2"
+    # URLs for further blocklists are appeneded below using the typical
+    # shell syntax:  "$urls new_url"
 
-# iblocklist.com is also supported
-# urls="$urls http://list.iblocklist.com/?list=srzondksmjuwsvmgdbhi&fileformat=p2p&archiveformat=gz&username=USERNAMEx$&pin=PIN"
+    # Blocklist.de collects reports from fail2ban probes, listing password brute-forces, scanners and other offenders
+    urls="$urls https://www.blocklist.de/downloads/export-ips_all.txt"
+
+    # badips.com, from score 2 up
+    urls="$urls http://www.badips.com/get/list/ssh/2"
+
+    # iblocklist.com is also supported
+    # urls="$urls http://list.iblocklist.com/?list=srzondksmjuwsvmgdbhi&fileformat=p2p&archiveformat=gz&username=USERNAMEx$&pin=PIN"
+fi
+
 
 # This is how it will look like on the server
 
