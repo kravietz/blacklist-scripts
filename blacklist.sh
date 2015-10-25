@@ -111,7 +111,7 @@ for url in $urls; do
 
     # download the blocklist
     set_name=$(echo "$url" | awk -F/ '{print substr($3,0,21);}') # set name is derived from source URL hostname
-    curl -v -s ${COMPRESS_OPT} -k "$url" >"${unsorted_blocklist}" 2>"${headers}"
+    curl -L -v -s ${COMPRESS_OPT} -k "$url" >"${unsorted_blocklist}" 2>"${headers}"
 
     # this is required for blocklist.de that sends compressed content regardless of asked or not
     if [ -z "$COMPRESS_OPT" ]; then
