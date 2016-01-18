@@ -9,33 +9,39 @@
 
 config_file="/etc/ip-blacklist.conf"
 if [ -f "${config_file}" ]; then
-    exec <"${config_file}"
-    read line
-    while [ "$line" ]; do
-        if ! echo "$line" | egrep -q '(^#|^$)'; then
-            urls="${urls} $line"
-        fi
-        read line
-    done
+    source ${config_file}
 else
     # if no config file is available, load default set of blacklists
+    # URLs for further blocklists are appended using the classical
+    # shell syntax:  "$URLS new_url"
 
     # Emerging Threats lists offensive IPs such as botnet command servers
-    urls="http://rules.emergingthreats.net/fwrules/emerging-Block-IPs.txt"
-
-    # URLs for further blocklists are appeneded below using the typical
-    # shell syntax:  "$urls new_url"
+    URLS="http://rules.emergingthreats.net/fwrules/emerging-Block-IPs.txt"
 
     # Blocklist.de collects reports from fail2ban probes, listing password brute-forces, scanners and other offenders
-    urls="$urls https://www.blocklist.de/downloads/export-ips_all.txt"
+    URLS="$URLS https://www.blocklist.de/downloads/export-ips_all.txt"
 
     # badips.com, from score 2 up
-    urls="$urls http://www.badips.com/get/list/ssh/2"
+    URLS="$URLS http://www.badips.com/get/list/ssh/2"
 
     # iblocklist.com is also supported
-    # urls="$urls http://list.iblocklist.com/?list=srzondksmjuwsvmgdbhi&fileformat=p2p&archiveformat=gz&username=USERNAMEx$&pin=PIN"
+    # URLS="$URLS http://list.iblocklist.com/?list=srzondksmjuwsvmgdbhi&fileformat=p2p&archiveformat=gz&username=USERNAMEx$&pin=PIN"
+
+    # by default all incoming/forwarding traffic is blocked
+    # if this parameter is specified, only the specified ports will be blocked
+    PORTS="22/tcp"
+
+    # iptables logging limit
+    LIMIT="10/minute"
 fi
 
+function link_set {
+    if [ "$3" = "log" ]; then
+        iptables -A "$1" -m set --match-set "$2" src,dst -m limit --limit "$LIMIT" -j LOG --log-prefix "BLOCK $2 "
+    fi
+    iptables -A "$1" -m set --match-set "$2" src -j DROP
+    iptables -A "$1" -m set --match-set "$2" dst -j DROP
+}
 
 # This is how it will look like on the server
 
@@ -51,18 +57,19 @@ fi
 #     0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            match-set www.badips.com dst
 blocklist_chain_name=blocklists
 
+# check for dependencies - ipset and curl
 if [ -z "$(which ipset 2>/dev/null)" ]; then
     echo "Cannot find ipset"
     echo "Run \"apt-get install ipset\" or \"yum install ipset\""
     exit 1
 fi
-
 if [ -z "$(which curl 2>/dev/null)" ]; then
     echo "Cannot find curl"
     echo "Run \"apt-get install curl\" or \"yum install curl\""
     exit 1
 fi
 
+# check if we are on OpenWRT
 if [ "$(which uci 2>/dev/null)" ]; then
     # we're on OpenWRT
     wan_iface=$(uci get network.wan.ifname)
@@ -94,14 +101,15 @@ fi
 iptables -F ${blocklist_chain_name}
 
 # create the "manual" blacklist set
+# this can be populated manually using ipset command:
+# ipset add manual-blacklist a.b.c.d
 set_name="manual-blacklist"
 if ! ipset list | grep -q "Name: ${set_name}"; then
     ipset create "${set_name}" hash:net
 fi
-iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" src,dst -m limit --limit 10/minute -j LOG --log-prefix "BLOCK ${set_name} "
-iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" src,dst -j DROP
+link_set("${blocklist_chain_name}", "${blocklist_chain_name}", "$3")
                                                                       
-# now process the dynamic blacklists
+# download and process the dynamic blacklists
 for url in $urls; do
     # initialize temp files
     unsorted_blocklist=$(mktemp)
@@ -167,13 +175,8 @@ for url in $urls; do
 
     # actually execute the set update
     ipset -! -q restore < "${new_set_file}"
-
-    if [ "$1" = "log" ]; then
-        iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" src -m limit --limit 10/minute -j LOG --log-prefix "BLOCK src ${set_name} "
-        iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" dst -m limit --limit 10/minute -j LOG --log-prefix "BLOCK dst ${set_name} "
-    fi
-    iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" src -j DROP
-    iptables -A ${blocklist_chain_name} -m set --match-set "${set_name}" dst -j DROP
+    
+    link_set("${blocklist_chain_name}", "${blocklist_chain_name}", "$3")
 
     # clean up temp files
     rm "${unsorted_blocklist}" "${sorted_blocklist}" "${new_set_file}" "${headers}"
