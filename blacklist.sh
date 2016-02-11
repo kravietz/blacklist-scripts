@@ -35,7 +35,7 @@ else
     LIMIT="10/minute"
 fi
 
-function link_set {
+link_set () {
     if [ "$3" = "log" ]; then
         iptables -A "$1" -m set --match-set "$2" src,dst -m limit --limit "$LIMIT" -j LOG --log-prefix "BLOCK $2 "
     fi
