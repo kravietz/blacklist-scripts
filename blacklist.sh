@@ -108,11 +108,9 @@ if ! ipset list | grep -q "Name: ${set_name}"; then
 fi
 link_set "${blocklist_chain_name}" "${set_name}" "$3"
 
-echo $URLS
 # download and process the dynamic blacklists
 for url in $URLS
 do
-    echo $url
     # initialize temp files
     unsorted_blocklist=$(mktemp)
     sorted_blocklist=$(mktemp)
