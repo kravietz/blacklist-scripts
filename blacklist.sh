@@ -82,7 +82,6 @@ else
     INPUT=INPUT
     FORWARD=FORWARD
 fi
-    
 
 # create main blocklists chain
 if ! iptables -L | grep -q "Chain ${blocklist_chain_name}"; then
@@ -107,10 +106,13 @@ set_name="manual-blacklist"
 if ! ipset list | grep -q "Name: ${set_name}"; then
     ipset create "${set_name}" hash:net
 fi
-link_set("${blocklist_chain_name}", "${blocklist_chain_name}", "$3")
-                                                                      
+link_set "${blocklist_chain_name}" "${set_name}" "$3"
+
+echo $URLS
 # download and process the dynamic blacklists
-for url in $urls; do
+for url in $URLS
+do
+    echo $url
     # initialize temp files
     unsorted_blocklist=$(mktemp)
     sorted_blocklist=$(mktemp)
@@ -176,10 +178,8 @@ for url in $urls; do
     # actually execute the set update
     ipset -! -q restore < "${new_set_file}"
     
-    link_set("${blocklist_chain_name}", "${blocklist_chain_name}", "$3")
+    link_set "${blocklist_chain_name}" "${set_name}" "$3"
 
     # clean up temp files
     rm "${unsorted_blocklist}" "${sorted_blocklist}" "${new_set_file}" "${headers}"
 done
-
-
