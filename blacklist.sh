@@ -84,15 +84,15 @@ else
 fi
 
 # create main blocklists chain
-if ! iptables -L | grep -q "Chain ${blocklist_chain_name}"; then
+if ! iptables -nL | grep -q "Chain ${blocklist_chain_name}"; then
     iptables -N ${blocklist_chain_name}
 fi
 
 # inject references to blocklist in the beginning of input and forward chains
-if ! iptables -L ${INPUT} | grep -q ${blocklist_chain_name}; then
+if ! iptables -nL ${INPUT} | grep -q ${blocklist_chain_name}; then
   iptables -I ${INPUT} 1 ${IN_OPT} -j ${blocklist_chain_name}
 fi
-if ! iptables -L ${FORWARD} | grep -q ${blocklist_chain_name}; then
+if ! iptables -nL ${FORWARD} | grep -q ${blocklist_chain_name}; then
   iptables -I ${FORWARD} 1 ${IN_OPT} -j ${blocklist_chain_name}
 fi                                                                 
 
