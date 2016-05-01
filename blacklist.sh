@@ -4,6 +4,9 @@
 # Pawel Krawczyk 2014-2015
 # documentation https://github.com/kravietz/blacklist-scripts
 
+# iptables logging limit
+LIMIT="10/minute"
+
 # try to load config file
 # it should contain one blacklist URL per line
 
@@ -30,9 +33,6 @@ else
     # by default all incoming/forwarding traffic is blocked
     # if this parameter is specified, only the specified ports will be blocked
     PORTS="22/tcp"
-
-    # iptables logging limit
-    LIMIT="10/minute"
 fi
 
 link_set () {
@@ -106,7 +106,7 @@ set_name="manual-blacklist"
 if ! ipset list | grep -q "Name: ${set_name}"; then
     ipset create "${set_name}" hash:net
 fi
-link_set "${blocklist_chain_name}" "${set_name}" "$3"
+link_set "${blocklist_chain_name}" "${set_name}" "$1"
 
 # download and process the dynamic blacklists
 for url in $URLS
@@ -176,7 +176,7 @@ do
     # actually execute the set update
     ipset -! -q restore < "${new_set_file}"
     
-    link_set "${blocklist_chain_name}" "${set_name}" "$3"
+    link_set "${blocklist_chain_name}" "${set_name}" "$1"
 
     # clean up temp files
     rm "${unsorted_blocklist}" "${sorted_blocklist}" "${new_set_file}" "${headers}"
