@@ -4,6 +4,8 @@ This is a collection of shell scripts that are intended to block Linux systems a
 
 [Emerging Threats](http://rules.emergingthreats.net/fwrules/) provides similar rules that essentially run `iptables` for *each* blacklisted IP which is extremely inefficient in case of large blacklists. Using `ipset` means using just one `iptables` rule to perform a very efficient lookup in hash structure created by `ipset`.
 
+**Note:** This script is a quick hack rather than a complete solution. If looking for the latter, have a look at [FireHOL](http://firehol.org/) and its excellent [FireHOL IP Lists](http://iplists.firehol.org/) add-on.
+
 ## Available blacklists
 
 * [Emerging Threats](http://rules.emergingthreats.net/fwrules/) - list of other known threats (botnet C&C, compromised servers etc) compiled from various sources, including [Spamhaus DROP](http://www.spamhaus.org/drop/), [Shadoserver](https://www.shadowserver.org/wiki/) and [DShield Top Attackers](http://www.dshield.org/top10.html)
