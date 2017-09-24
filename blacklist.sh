@@ -60,12 +60,12 @@ blocklist_chain_name=blocklists
 # check for dependencies - ipset and curl
 if [ -z "$(which ipset 2>/dev/null)" ]; then
     echo "Cannot find ipset"
-    echo "Run \"apt-get install ipset\" or \"yum install ipset\""
+    echo "Run \"apt-get install ipset\" (Debian/Ubuntu) or \"yum install ipset\" (RedHat/CentOS/Fedora) or \"opkg install ipset\" (OpenWRT/LEDE)"
     exit 1
 fi
 if [ -z "$(which curl 2>/dev/null)" ]; then
     echo "Cannot find curl"
-    echo "Run \"apt-get install curl\" or \"yum install curl\""
+    echo "Run \"apt-get install curl\" (Debian/Ubuntu) or \"yum install curl\" (RedHat/CentOS/Fedora) or \"opkg install curl\" (OpenWRT/LEDE)"
     exit 1
 fi
 
