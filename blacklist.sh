@@ -29,10 +29,6 @@ else
 
     # iblocklist.com is also supported
     # URLS="$URLS http://list.iblocklist.com/?list=srzondksmjuwsvmgdbhi&fileformat=p2p&archiveformat=gz&username=USERNAMEx$&pin=PIN"
-
-    # by default all incoming/forwarding traffic is blocked
-    # if this parameter is specified, only the specified ports will be blocked
-    PORTS="22/tcp"
 fi
 
 link_set () {
@@ -137,7 +133,7 @@ do
             awk -f /etc/range2cidr.awk <"${unsorted_blocklist}" >"${awk_tmp}"
             mv "${awk_tmp}" "${unsorted_blocklist}"
         else
-            echo "range2cidr.awk script not found, cannot process ${unsorted_blocklist}, skipping"
+            echo "/etc/range2cidr.awk script not found, cannot process ${unsorted_blocklist}, skipping"
             continue
         fi
     fi
