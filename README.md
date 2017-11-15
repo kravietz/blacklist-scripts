@@ -4,18 +4,8 @@ This is a collection of shell scripts that are intended to block Linux systems a
 
 [Emerging Threats](http://rules.emergingthreats.net/fwrules/) provides similar rules that essentially run `iptables` for *each* blacklisted IP which is extremely inefficient in case of large blacklists. Using `ipset` means using just one `iptables` rule to perform a very efficient lookup in hash structure created by `ipset`.
 
-## FireHOL Blacklists
 
-**Note:** This script is a quick hack suitable primarily for embedded devices rather than a complete solution. For the latter, have a look at [FireHOL](http://firehol.org/) and its excellent [FireHOL IP Lists](http://iplists.firehol.org/) add-on. Quick start:
-
-* Run `update-ipsets enable dshield` and then `update-ipsets`
-* Add the following to `/etc/firehol/firehol.conf` and run `firehol start`
-
-```
-ipv4 ipset create dshield hash:net
-ipv4 ipset addfile dshield ipsets/dshield.netset
-blacklist4 stateful inface eth0 connlog "BLACKLIST " ipset:dshield
-```
+**Note:** This script is a quick hack suitable primarily for embedded devices (OpenWRT, LEDE) rather than a complete solution for server. For the latter, have a look at [FireHOL](http://firehol.org/) and its excellent [FireHOL IP Lists](http://iplists.firehol.org/) add-on. Have a look at the **FireHOL** section further down.
 
 ## Available blacklists
 If you decide to use this script, these are the blacklists available by default:
@@ -153,3 +143,20 @@ Traffic (SSH password bruteforce scanners) blocked by [OSSEC HIDS](http://www.os
 
     BLOCK manual-blacklist IN=eth1 OUT= MAC=bc:76:2e:08:69:d4:3c:08:f6:d9:93:a5:08:00 SRC=89.46.14.48 DST=10.179.134.230 LEN=60 TOS=0x00 PREC=0x00 TTL=48 ID=62214 DF PROTO=TCP SPT=51436 DPT=22 WINDOW=5840 RES=0x00 SYN URGP=0 
     BLOCK manual-blacklist IN=eth1 OUT= MAC=bc:76:2e:08:69:d4:3c:08:f6:d9:93:a5:08:00 SRC=89.46.14.48 DST=10.179.134.230 LEN=60 TOS=0x00 PREC=0x00 TTL=48 ID=62215 DF PROTO=TCP SPT=51436 DPT=22 WINDOW=5840 RES=0x00 SYN URGP=0 
+
+## FireHOL Blacklists
+If you are looking for a mature firewall management solution for Linux that supports blacklists, definitely have a look at [FireHOL](http://firehol.org/) and its excellent [FireHOL IP Lists](http://iplists.firehol.org/) add-on. Compared to FireHOL, this script is a quick hack and I keep maintaining it primarily because FireHOL seems to be an overkill for OpenWRT/LEDE devices.
+
+Quick start with FireHOL blacklists:
+
+* Run `update-ipsets enable dshield` and then `update-ipsets`
+* Modify `/etc/firehol/firehol.conf` (remember to run `firehol start` afterwards)
+
+```
+ipv4 ipset create dshield hash:net
+ipv4 ipset addfile dshield ipsets/dshield.netset
+blacklist4 stateful inface eth0 connlog "BLACKLIST " ipset:dshield
+interface eth0 world4
+    server4 ssh deny src4 ipset:manual-blacklist
+    ...
+```
