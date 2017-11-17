@@ -47,6 +47,17 @@ The blacklist will be updated on daily basis.
 Manual run:
 
     sh /etc/firewall.user
+    
+### LEDE
+On LEDE the firewall comes up **before** network interfaces are configured so a service file is required to bring the blacklist when network is available. Create `/etc/init.d/blacklist` with the following contents and `chmod a+x /etc/init.d/blacklist`:
+````
+#!/bin/sh /etc/rc.common
+START=30
+COMMAND="sh /etc/firewall.user"
+boot() {
+   $COMMAND
+}
+````
 
 ## Linux
 Requirements:
